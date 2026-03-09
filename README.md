@@ -114,17 +114,45 @@ Supported actions:
 - `backup_list`
 - `backup_restore`
 
-## Install on Fresh Agent0
+## Quick Install (Copy/Paste)
+
+Use this exact flow on a fresh Agent0 instance:
 
 ```bash
-git clone https://github.com/Nunezchef/everything-agent0.git
-cd everything-agent0
-./scripts/install-into-agent0.sh /a0
+cd /a0/usr/workdir
+rm -rf .a0-install
+git clone --branch main https://github.com/Nunezchef/Ea0.git .a0-install
+bash /a0/usr/workdir/.a0-install/scripts/install-into-agent0.sh /a0
 ```
 
 Then restart Agent0.
 
-If your Agent0 root is not `/a0`, pass the correct path.
+If your Agent0 root is not `/a0`, replace the final argument with your real Agent0 root path.
+
+## One-Line Agent0 Prompt
+
+If you want Agent0 to run installation for you, paste this:
+
+```text
+Install this plugin from main branch only: https://github.com/Nunezchef/Ea0.git. Clone it into /a0/usr/workdir/.a0-install and run: bash /a0/usr/workdir/.a0-install/scripts/install-into-agent0.sh /a0
+```
+
+## Post-Install Check
+
+After restart, verify:
+1. Open `Settings -> External Services -> ECC Integration`
+2. Click `Install / Sync ECC`
+3. Confirm status fields populate (health, repo URL, vendor SHA, synced SHA, last sync)
+4. Confirm health is `healthy`
+
+## Troubleshooting (Common Install Errors)
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `No such file or directory: /a0/.a0-install/...` | Wrong clone path | Use `/a0/usr/workdir/.a0-install/...` |
+| `Error: Branch parameter is empty` | Wrong script used (`install_A0.sh`) | Use plugin installer `scripts/install-into-agent0.sh` |
+| `ECC tab missing in UI` | Installer not run against live Agent0 root | Re-run installer with correct root, then restart Agent0 |
+| Sync fails on vendor path | ECC vendor root missing | Open ECC panel and run `Install / Sync ECC` after install |
 
 ## Operational Workflows
 
