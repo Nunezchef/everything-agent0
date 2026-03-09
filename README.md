@@ -122,7 +122,7 @@ Use this exact flow on a fresh Agent0 instance:
 cd /a0/usr/workdir
 rm -rf .a0-install
 git clone --branch main https://github.com/Nunezchef/Ea0.git .a0-install
-bash /a0/usr/workdir/.a0-install/scripts/install-into-agent0.sh /a0
+bash /a0/usr/workdir/.a0-install/install.sh /a0
 ```
 
 Then restart Agent0.
@@ -134,7 +134,7 @@ If your Agent0 root is not `/a0`, replace the final argument with your real Agen
 If you want Agent0 to run installation for you, paste this:
 
 ```text
-Install this plugin from main branch only: https://github.com/Nunezchef/Ea0.git. Clone it into /a0/usr/workdir/.a0-install and run: bash /a0/usr/workdir/.a0-install/scripts/install-into-agent0.sh /a0
+Install this plugin from main branch only: https://github.com/Nunezchef/Ea0.git. Clone it into /a0/usr/workdir/.a0-install and run: bash /a0/usr/workdir/.a0-install/install.sh /a0
 ```
 
 ## Post-Install Check
@@ -150,7 +150,7 @@ After restart, verify:
 | Symptom | Cause | Fix |
 |---|---|---|
 | `No such file or directory: /a0/.a0-install/...` | Wrong clone path | Use `/a0/usr/workdir/.a0-install/...` |
-| `Error: Branch parameter is empty` | Wrong script used (`install_A0.sh`) | Use plugin installer `scripts/install-into-agent0.sh` |
+| `Error: Branch parameter is empty` | Wrong script used (`install_A0.sh`) | Use plugin installer `install.sh` |
 | `ECC tab missing in UI` | Installer not run against live Agent0 root | Re-run installer with correct root, then restart Agent0 |
 | Sync fails on vendor path | ECC vendor root missing | Open ECC panel and run `Install / Sync ECC` after install |
 
@@ -203,7 +203,9 @@ test -d /a0/usr/agents/ecc
 
 - `plugin.yaml`: plugin metadata
 - `hooks.md`: runtime hook behavior summary
-- `scripts/install-into-agent0.sh`: installer for clean Agent0
+- `install.sh`: primary community-style installer
+- `initialize.py`: plugin initializer (applies runtime payload + initial ECC sync)
+- `scripts/install-into-agent0.sh`: compatibility wrapper to `install.sh`
 - `runtime/python/*`: API/tool/transform runtime payload
 - `runtime/webui/*`: ECC settings UI payload
 - `runtime/usr/*`: prompt/memory/system_prompt payload

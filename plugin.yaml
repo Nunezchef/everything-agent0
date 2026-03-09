@@ -1,8 +1,8 @@
 name: everything-agent0
 title: Everything Agent0 (ECC)
 description: Integrates Everything Claude Code into Agent0 with hooks, skills/agents/commands, core-memory prompt injection, sync/update, and backups.
-version: 0.2.0
-github: https://github.com/Nunezchef/everything-agent0
+version: 0.2.1
+github: https://github.com/Nunezchef/Ea0
 tags:
   - agent-zero
   - ecc
