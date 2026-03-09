@@ -1,0 +1,153 @@
+<html>
+<head>
+  <title>ECC Integration</title>
+  <script type="module">
+    import { store } from "/components/settings/ecc/ecc-store.js";
+  </script>
+</head>
+<body>
+  <div x-data>
+    <template x-if="$store.eccSettings">
+      <div x-init="$store.eccSettings.loadStatus()">
+        <div class="section-title">ECC Integration</div>
+        <div class="section-description">
+          Manage ECC install/sync, Git updates, and backup points.
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Health Status</div>
+            <div class="field-description">Workspace health for ECC components.</div>
+          </div>
+          <div class="field-control" x-text="$store.eccSettings.status?.health_report?.status || 'unknown'"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">ECC Git Repository</div>
+            <div class="field-description">Source repository configured for ECC updates.</div>
+          </div>
+          <div class="field-control">
+            <a x-show="$store.eccSettings.status?.vendor?.remote_url"
+               :href="$store.eccSettings.status?.vendor?.remote_url"
+               target="_blank"
+               rel="noopener noreferrer"
+               x-text="$store.eccSettings.status?.vendor?.remote_url"></a>
+            <span x-show="!$store.eccSettings.status?.vendor?.remote_url">Not available</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Current Version</div>
+            <div class="field-description">Current commit in the local ECC vendor checkout.</div>
+          </div>
+          <div class="field-control" x-text="$store.eccSettings.status?.vendor?.current_sha || 'unknown'"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Installed Version</div>
+            <div class="field-description">Commit used for the last successful ECC sync.</div>
+          </div>
+          <div class="field-control" x-text="$store.eccSettings.status?.vendor_state?.commit_sha || $store.eccSettings.status?.manifest?.source_sha || 'unknown'"></div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Last Sync</div>
+            <div class="field-description">Timestamp of the latest ECC sync state update.</div>
+          </div>
+          <div class="field-control" x-text="$store.eccSettings.formatTime($store.eccSettings.status?.vendor_state?.updated_at)"></div>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">ECC Prompt Injection</div>
+            <div class="field-description">Confirms ECC reference prompt and core-memory bridge are present.</div>
+          </div>
+          <div class="field-control">
+            <div>System Prompt Extension: <span x-text="$store.eccSettings.status?.injection?.system_prompt_extension ? 'active' : 'missing'"></span></div>
+            <div>Reference Prompt: <span x-text="$store.eccSettings.status?.injection?.reference_prompt ? 'active' : 'missing'"></span></div>
+            <div>Core Memory: <span x-text="$store.eccSettings.status?.injection?.core_memory ? 'active' : 'missing'"></span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Backup Before Update</div>
+            <div class="field-description">Create a backup point before pulling latest ECC from Git.</div>
+          </div>
+          <div class="field-control">
+            <label class="toggle">
+              <input type="checkbox" x-model="$store.eccSettings.backupBeforeUpdate" />
+              <span class="toggler"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Install / Sync ECC</div>
+            <div class="field-description">Generate/update all ECC integration assets in Agent0.</div>
+          </div>
+          <div class="field-control">
+            <button class="btn btn-field"
+                    @click="$store.eccSettings.syncNow()"
+                    :disabled="$store.eccSettings.loading">Install / Sync ECC</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Update ECC From Git</div>
+            <div class="field-description">Pull latest changes from repository and re-sync into Agent0.</div>
+          </div>
+          <div class="field-control">
+            <button class="btn btn-field"
+                    @click="$store.eccSettings.updateLatest()"
+                    :disabled="$store.eccSettings.loading">Update Latest (Git)</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Create Backup Point</div>
+            <div class="field-description">Save ECC-managed files state for rollback.</div>
+          </div>
+          <div class="field-control">
+            <button class="btn btn-field"
+                    @click="$store.eccSettings.createBackup()"
+                    :disabled="$store.eccSettings.loading">Create Backup Point</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Restore Backup</div>
+            <div class="field-description">Restore ECC files from a previously created backup point.</div>
+          </div>
+          <div class="field-control">
+            <select x-model="$store.eccSettings.selectedBackupId">
+              <option value="">Select backup</option>
+              <template x-for="item in ($store.eccSettings.backups || [])" :key="item.id">
+                <option :value="item.id" x-text="item.id"></option>
+              </template>
+            </select>
+            <button class="btn btn-field"
+                    @click="$store.eccSettings.restoreSelectedBackup()"
+                    :disabled="$store.eccSettings.loading || !$store.eccSettings.selectedBackupId">Restore Selected</button>
+          </div>
+        </div>
+
+        <div x-show="$store.eccSettings.loading" class="loading">
+          <span>Processing ECC action...</span>
+        </div>
+
+        <div x-show="$store.eccSettings.error" class="error">
+          <span x-text="$store.eccSettings.error"></span>
+        </div>
+      </div>
+    </template>
+  </div>
+</body>
+</html>
