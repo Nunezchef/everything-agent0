@@ -2,6 +2,7 @@ import importlib.util
 import json
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 
@@ -69,10 +70,32 @@ class HookBridgeTest(unittest.TestCase):
             self.assertIn("usr/plugins/ea0-integration/state/hook_compatibility.json", generated)
 
             bridge_text = bridge_path.read_text(encoding="utf-8")
-            self.assertIn('"matcher": "Bash|Write"', bridge_text)
-            self.assertIn('"command": "echo \\"sync\\""', bridge_text)
-            self.assertIn('"timeout": 9', bridge_text)
-            self.assertIn('"async": true', bridge_text)
+            self.assertIn("'matcher': 'Bash|Write'", bridge_text)
+            self.assertIn("'command': 'echo \"sync\"'", bridge_text)
+            self.assertIn("'timeout': 9", bridge_text)
+            self.assertIn("'async': True", bridge_text)
+
+            fake_extension_module = types.ModuleType("python.helpers.extension")
+
+            class FakeExtension:
+                def __init__(self, agent=None):
+                    self.agent = agent
+
+            fake_extension_module.Extension = FakeExtension
+            sys.modules["python.helpers.extension"] = fake_extension_module
+
+            fake_runtime_module = types.ModuleType("python.helpers.ea0_sync.hook_runtime")
+
+            def run_hook_rules(*, rules, payload, plugin_root):
+                return {"rules": rules, "payload": payload, "plugin_root": str(plugin_root)}
+
+            fake_runtime_module.run_hook_rules = run_hook_rules
+            sys.modules["python.helpers.ea0_sync.hook_runtime"] = fake_runtime_module
+
+            generated_module = load_module("generated_hook_bridge_module", bridge_path)
+            bridge = generated_module.Ea0HookBridge(agent=None)
+            result = __import__("asyncio").run(bridge.execute(tool_name="Bash"))
+            self.assertIsNone(result)
 
             report = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertEqual(report["mapped_events"]["PreToolUse"], "tool_execute_before")

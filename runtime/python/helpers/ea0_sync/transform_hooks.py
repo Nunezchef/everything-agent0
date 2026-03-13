@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pprint import pformat
 from pathlib import Path
 
 EVENT_TO_POINT = {
@@ -55,14 +56,14 @@ def _extract_command_rules(rules: object) -> list[dict[str, object]]:
 
 
 def _render_rule_bridge(*, event_name: str, vendor_root: Path, rules: list[dict[str, object]]) -> str:
-    rules_json = json.dumps(rules, indent=8, sort_keys=True)
+    rules_literal = pformat(rules, indent=8, sort_dicts=True)
     return (
         "from pathlib import Path\n"
         "from python.helpers.extension import Extension\n"
         "from python.helpers.ea0_sync.hook_runtime import run_hook_rules\n\n"
         "class Ea0HookBridge(Extension):\n"
         "    async def execute(self, **kwargs):\n"
-        f"        rules = {rules_json}\n"
+        f"        rules = {rules_literal}\n"
         "        payload = {\n"
         f"            'event': '{event_name}',\n"
         "            'kwargs': kwargs,\n"
