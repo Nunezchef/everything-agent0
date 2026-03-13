@@ -14,6 +14,9 @@ from python.helpers.ea0_sync.backup_points import (
 )
 from python.helpers.ea0_sync.git_update import update_to_latest, get_repo_info
 from python.helpers.ea0_sync.vendor_manager import read_vendor_state
+from python.helpers.ea0_sync.learning_scheduler import ensure_learning_schedule, LEARNING_TASK_NAME
+from python.helpers.ea0_sync.learning_store import learning_state_dir
+from python.helpers.ea0_sync.learning_v1_process import process_pending_observations_with_agent
 from python.helpers.notification import NotificationManager, NotificationType, NotificationPriority
 try:
     from python.helpers.extension import clear_extensions_cache
@@ -64,6 +67,44 @@ class Ea0Sync(ApiHandler):
             pass
         return "local"
 
+    def _learning_status(self, workspace_root: Path) -> dict:
+        import json
+        from python.helpers.task_scheduler import TaskScheduler
+
+        learning_dir = learning_state_dir(workspace_root)
+        status_path = learning_dir / "status.json"
+        checkpoints_path = learning_dir / "checkpoints.json"
+        observations_path = learning_dir / "observations.jsonl"
+
+        scheduler = TaskScheduler.get()
+        task = scheduler.get_task_by_name(LEARNING_TASK_NAME)
+
+        observation_count = 0
+        if observations_path.exists():
+            with observations_path.open("r", encoding="utf-8") as handle:
+                observation_count = sum(1 for line in handle if line.strip())
+
+        checkpoints = json.loads(checkpoints_path.read_text(encoding="utf-8")) if checkpoints_path.exists() else {}
+        last_processed = int(checkpoints.get("last_processed_line", 0))
+        pending_count = max(0, observation_count - last_processed)
+
+        return {
+            "status": json.loads(status_path.read_text(encoding="utf-8")) if status_path.exists() else {},
+            "checkpoints": checkpoints,
+            "scheduler": {
+                "present": task is not None,
+                "name": task.name if task else LEARNING_TASK_NAME,
+                "uuid": task.uuid if task else "",
+                "state": str(task.state) if task else "missing",
+                "next_run_minutes": task.get_next_run_minutes() if task else None,
+            },
+            "observations": {
+                "count": observation_count,
+                "pending": pending_count,
+                "exists": observations_path.exists(),
+            },
+        }
+
     async def process(self, input: dict, request: Request) -> dict | Response:
         action = str(input.get("action") or "sync").strip().lower()
         workspace_root = self._resolve_workspace(input)
@@ -79,6 +120,7 @@ class Ea0Sync(ApiHandler):
                 "reference_prompt": (workspace_root / "usr" / "prompts" / "fw.ea0.reference.md").is_file(),
                 "core_memory": (workspace_root / "usr" / "knowledge" / "core-memories" / "ea0" / "agent0-ea0-integration.md").is_file(),
             }
+            learning = self._learning_status(workspace_root)
             return {
                 "success": True,
                 "health_report": evaluate_workspace_health(workspace_root),
@@ -86,6 +128,7 @@ class Ea0Sync(ApiHandler):
                 "vendor_state": vendor_state,
                 "vendor": repo_info,
                 "injection": injection,
+                "learning": learning,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
             }
 
@@ -105,6 +148,20 @@ class Ea0Sync(ApiHandler):
             result = restore_backup_point(workspace_root=workspace_root, backup_id=backup_id)
             self._notify(ok=True, message=f"EA0 backup restored ({backup_id}).", group="ea0-backup")
             return {"success": True, "result": result}
+
+        if action == "learning_status":
+            return {
+                "success": True,
+                "learning": self._learning_status(workspace_root),
+            }
+
+        if action == "learning_process":
+            result = await process_pending_observations_with_agent(workspace_root=workspace_root, agent=self.agent)
+            return {"success": True, "learning": result}
+
+        if action == "learning_schedule_ensure":
+            result = await ensure_learning_schedule(workspace_root=workspace_root)
+            return {"success": True, "learning": result}
 
         if action == "update_latest":
             source_sha = self._resolve_source_sha(input, vendor_root)

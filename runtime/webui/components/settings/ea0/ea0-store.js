@@ -122,6 +122,36 @@ const model = {
       this.loading = false;
     }
   },
+
+  async processLearningNow() {
+    this.loading = true;
+    this.error = null;
+    try {
+      await this._callChecked({ action: "learning_process" });
+      toast("success", "EA0 learning processed");
+      await this.loadStatus();
+    } catch (e) {
+      this.error = e.message || String(e);
+      toast("error", `EA0 learning failed: ${this.error}`, 6);
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  async ensureLearningSchedule() {
+    this.loading = true;
+    this.error = null;
+    try {
+      await this._callChecked({ action: "learning_schedule_ensure" });
+      toast("success", "EA0 learning schedule ensured");
+      await this.loadStatus();
+    } catch (e) {
+      this.error = e.message || String(e);
+      toast("error", `EA0 learning scheduler failed: ${this.error}`, 6);
+    } finally {
+      this.loading = false;
+    }
+  },
 };
 
 const store = createStore("ea0Settings", model);

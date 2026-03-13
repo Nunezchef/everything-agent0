@@ -2,12 +2,13 @@
 """Initializer for Ea0 plugin payload.
 
 Copies runtime payload into Agent0, wires UI section, ensures EA0 vendor clone,
-then runs initial EA0 sync.
+then runs initial EA0 sync and declares learning scheduler state.
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import shutil
 import subprocess
 import sys
@@ -94,6 +95,13 @@ def _run_initial_sync(a0_root: Path, vendor: Path) -> None:
         raise RuntimeError("EA0 initial sync failed")
 
 
+def _ensure_learning_scheduler(a0_root: Path) -> None:
+    sys.path.insert(0, str(a0_root))
+    from python.helpers.ea0_sync.learning_scheduler import ensure_learning_schedule
+
+    asyncio.run(ensure_learning_schedule(workspace_root=a0_root))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--a0-root", required=True)
@@ -112,6 +120,7 @@ def main() -> int:
     print("[init 1/6] Installing EA0 backend modules...")
     _copy(runtime / "python/api/ea0_sync.py", a0_root / "python/api/ea0_sync.py")
     _copy(runtime / "python/tools/ea0_sync_tool.py", a0_root / "python/tools/ea0_sync_tool.py")
+    _copy(runtime / "python/tools/ea0_learning_tool.py", a0_root / "python/tools/ea0_learning_tool.py")
     helpers_src = runtime / "python/helpers/ea0_sync"
     helpers_dst = a0_root / "python/helpers/ea0_sync"
     helpers_dst.mkdir(parents=True, exist_ok=True)
@@ -150,6 +159,7 @@ def main() -> int:
 
     print("[init 6/6] Running EA0 initial sync...")
     _run_initial_sync(a0_root, vendor)
+    _ensure_learning_scheduler(a0_root)
 
     print("Ea0 initialization completed.")
     return 0

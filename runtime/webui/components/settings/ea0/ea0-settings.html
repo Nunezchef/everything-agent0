@@ -74,6 +74,43 @@
 
         <div class="field">
           <div class="field-label">
+            <div class="field-title">Learning Scheduler</div>
+            <div class="field-description">Shows whether the EA0 continuous-learning background task is registered.</div>
+          </div>
+          <div class="field-control">
+            <div>Present: <span x-text="$store.ea0Settings.status?.learning?.scheduler?.present ? 'yes' : 'no'"></span></div>
+            <div>State: <span x-text="$store.ea0Settings.status?.learning?.scheduler?.state || 'unknown'"></span></div>
+            <div>Next Run (minutes): <span x-text="$store.ea0Settings.status?.learning?.scheduler?.next_run_minutes ?? 'unknown'"></span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Learning Queue</div>
+            <div class="field-description">Pending EA0 continuous-learning observations waiting to be processed.</div>
+          </div>
+          <div class="field-control">
+            <div>Captured Observations: <span x-text="$store.ea0Settings.status?.learning?.observations?.count ?? 0"></span></div>
+            <div>Pending Observations: <span x-text="$store.ea0Settings.status?.learning?.observations?.pending ?? 0"></span></div>
+            <div>Last Processed Line: <span x-text="$store.ea0Settings.status?.learning?.checkpoints?.last_processed_line ?? 0"></span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Learning Results</div>
+            <div class="field-description">Latest continuous-learning processing summary.</div>
+          </div>
+          <div class="field-control">
+            <div>Last Processed Observations: <span x-text="$store.ea0Settings.status?.learning?.status?.processed_count ?? 0"></span></div>
+            <div>Fragment Patterns: <span x-text="$store.ea0Settings.status?.learning?.status?.fragment_count ?? 0"></span></div>
+            <div>Solutions: <span x-text="$store.ea0Settings.status?.learning?.status?.solution_count ?? 0"></span></div>
+            <div>Last Update: <span x-text="$store.ea0Settings.formatTime($store.ea0Settings.status?.learning?.status?.updated_at)"></span></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
             <div class="field-title">Backup Before Update</div>
             <div class="field-description">Create a backup point before pulling latest EA0 from Git.</div>
           </div>
@@ -118,6 +155,30 @@
             <button class="btn btn-field"
                     @click="$store.ea0Settings.createBackup()"
                     :disabled="$store.ea0Settings.loading">Create Backup Point</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Process Learning Now</div>
+            <div class="field-description">Run the EA0 continuous-learning processor immediately.</div>
+          </div>
+          <div class="field-control">
+            <button class="btn btn-field"
+                    @click="$store.ea0Settings.processLearningNow()"
+                    :disabled="$store.ea0Settings.loading">Process Learning Now</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <div class="field-title">Ensure Learning Schedule</div>
+            <div class="field-description">Create the recurring Agent0 scheduler task for EA0 learning if missing.</div>
+          </div>
+          <div class="field-control">
+            <button class="btn btn-field"
+                    @click="$store.ea0Settings.ensureLearningSchedule()"
+                    :disabled="$store.ea0Settings.loading">Ensure Learning Schedule</button>
           </div>
         </div>
 
